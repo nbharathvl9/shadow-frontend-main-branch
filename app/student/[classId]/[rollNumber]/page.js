@@ -4,52 +4,64 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/utils/api';
 
 export default function StudentDashboard() {
-  const { rollNumber } = useParams();
+  const params = useParams();
+  // 1. FIXED: Extract both IDs from the URL
+  const { classId, rollNumber } = params;
+
   const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ⚠️ HARDCODED CLASS ID FOR V1 (Replace with your specific Class ID from Postman)
-  const CLASS_ID = "696e812eb7aa7171adb5350e"; 
-
   useEffect(() => {
-    api.get(`/student/report/${CLASS_ID}/${rollNumber}`)
+    // 2. FIXED: Wait for both IDs to be available
+    if (!classId || !rollNumber) return;
+
+    // 3. FIXED: Use the 'classId' variable, NOT the hardcoded string
+    api.get(`/student/report/${classId}/${rollNumber}`)
       .then(res => {
         setData(res.data);
         setLoading(false);
       })
       .catch(err => {
+        console.error("Fetch Error:", err);
         alert("Student not found or Server Error");
         setLoading(false);
       });
-  }, [rollNumber]);
+  }, [classId, rollNumber]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center text-blue-600 animate-pulse">Loading...</div>;
-  if (!data) return <div className="flex h-screen items-center justify-center">Student Not Found</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center text-blue-600 animate-pulse">Loading Report...</div>;
+  if (!data) return <div className="flex h-screen items-center justify-center text-gray-500">Student Not Found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-10">
-      
-      {/* Top Bar (Mobile App Style) */}
-      <div className="bg-white px-6 py-6 shadow-sm sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Roll No. {data.studentRoll}</h1>
-            <p className="text-sm text-gray-500">{data.className}</p>
-          </div>
-          <button onClick={() => router.push('/')} className="text-sm text-gray-400">Exit</button>
+    <div className="min-h-screen bg-gray-100 pb-10 text-gray-800">
+
+      {/* Top Bar */}
+      <div className="bg-white px-6 py-6 shadow-sm sticky top-0 z-10 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Roll No. {data.studentRoll}</h1>
+          <p className="text-sm text-gray-500">{data.className}</p>
         </div>
+        <button
+          onClick={() => {
+            // Clear saved login data
+            localStorage.removeItem('studentClassId');
+            localStorage.removeItem('studentRoll');
+            router.push('/');
+          }}
+          className="text-sm text-gray-400 hover:text-red-500 font-medium"
+        >
+          Logout
+        </button>
       </div>
 
       {/* Stats Grid */}
       <div className="p-4 space-y-4">
-        {data.report.map((subject) => {
+        {data.report.map((subject, index) => {
           const isSafe = subject.message.includes("Safe");
-          
+
           return (
-            <div key={subject._id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
-              
-              {/* Status Indicator Bar on the left */}
+            // Added 'key' to fix console warning
+            <div key={subject._id || index} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 relative overflow-hidden">
               <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isSafe ? 'bg-green-500' : 'bg-red-500'}`}></div>
 
               <div className="flex justify-between items-start mb-2 pl-2">
@@ -64,7 +76,6 @@ export default function StudentDashboard() {
                 <span>📚 {subject.totalClasses} Total</span>
               </div>
 
-              {/* Bunk Message Box */}
               <div className={`ml-2 p-3 rounded-xl text-sm font-medium ${isSafe ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                 {subject.message}
               </div>
