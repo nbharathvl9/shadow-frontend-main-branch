@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Navbar from '@/app/components/Navbar';
 import api from '@/utils/api';
 
 export default function CreateClass() {
@@ -13,9 +14,7 @@ export default function CreateClass() {
         adminPin: ''
     });
 
-    const [subjects, setSubjects] = useState([
-        { name: '', code: '' }
-    ]);
+    const [subjects, setSubjects] = useState([{ name: '', code: '' }]);
 
     const addSubject = () => {
         setSubjects([...subjects, { name: '', code: '' }]);
@@ -52,78 +51,74 @@ export default function CreateClass() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 flex justify-center">
-            <div className="w-full max-w-lg">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800">Create New Class 🛠️</h1>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="text-xs bg-gray-100 text-gray-600 px-3 py-2 rounded-lg font-bold hover:bg-gray-200"
-                    >
-                        ← Home
-                    </button>
+        <>
+            <Navbar />
+
+            <div className="max-w-md mx-auto px-4 py-8">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold mb-2">Create New Class</h1>
+                    <p>Set up your class for attendance tracking</p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-xl p-8">
+                <div className="card">
                     <form onSubmit={handleSubmit} className="space-y-4">
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700">Class Name</label>
+                            <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">Class Name</label>
                             <input
                                 required
-                                className="w-full p-3 border rounded-lg bg-gray-50 mt-1"
+                                className="input"
                                 placeholder="e.g. CSE-3A"
                                 onChange={(e) => setFormData({ ...formData, className: e.target.value })}
                             />
-                            <p className="text-xs text-gray-500 mt-1">You'll use this to login as admin</p>
+                            <p className="text-xs text-[var(--text-dim)] mt-1">You'll use this to login as admin</p>
                         </div>
 
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-bold text-gray-700">Total Students</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">Total Students</label>
                                 <input
                                     required type="number"
-                                    className="w-full p-3 border rounded-lg bg-gray-50 mt-1"
+                                    className="input"
                                     placeholder="70"
                                     onChange={(e) => setFormData({ ...formData, totalStudents: e.target.value })}
                                 />
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-bold text-gray-700">Admin PIN</label>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">Admin PIN</label>
                                 <input
                                     required type="password"
-                                    className="w-full p-3 border rounded-lg bg-gray-50 mt-1"
+                                    className="input"
                                     placeholder="****"
                                     onChange={(e) => setFormData({ ...formData, adminPin: e.target.value })}
                                 />
                             </div>
                         </div>
 
-                        <hr className="my-6" />
+                        <hr className="border-[var(--border)]" />
 
                         <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Subjects</label>
+                            <div className="flex justify-between items-center mb-3">
+                                <label className="block text-sm font-medium text-white">Subjects</label>
                                 <button
                                     type="button"
                                     onClick={addSubject}
-                                    className="text-xs bg-black text-white px-3 py-1 rounded-full"
+                                    className="text-xs px-3 py-1 bg-white text-black rounded-full font-medium"
                                 >
                                     + Add Subject
                                 </button>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {subjects.map((sub, index) => (
-                                    <div key={index} className="flex gap-2">
-                                        <input
-                                            placeholder="Subject Name (e.g. Math)"
-                                            className="flex-1 p-3 border rounded-lg bg-gray-50"
-                                            value={sub.name}
-                                            onChange={(e) => handleSubjectChange(index, 'name', e.target.value)}
-                                            required
-                                        />
-                                    </div>
+                                    <input
+                                        key={index}
+                                        placeholder="Subject Name (e.g. Math)"
+                                        className="input"
+                                        value={sub.name}
+                                        onChange={(e) => handleSubjectChange(index, 'name', e.target.value)}
+                                        required
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -131,7 +126,7 @@ export default function CreateClass() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-6 bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition"
+                            className="btn btn-primary"
                         >
                             {loading ? 'Creating...' : 'Launch Class 🚀'}
                         </button>
@@ -139,6 +134,6 @@ export default function CreateClass() {
                     </form>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

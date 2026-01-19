@@ -1,0 +1,146 @@
+'use client';
+import { useState } from 'react';
+
+export default function Calendar({ selectedDate, onSelectDate, attendanceDates = [], multiSelect = false, selectedDates = [], allowFuture = false, examDates = [], holidayDates = [] }) {
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    const daysInMonth = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth() + 1,
+        0
+    ).getDate();
+
+    const firstDayOfMonth = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        1
+    ).getDay();
+
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+
+    const prevMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+    };
+
+    const nextMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+    };
+
+    const formatDate = (day) => {
+        const year = currentMonth.getFullYear();
+        const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        return `${year}-${month}-${dayStr}`;
+    };
+
+    const isToday = (day) => {
+        const today = new Date();
+        return day === today.getDate() &&
+            currentMonth.getMonth() === today.getMonth() &&
+            currentMonth.getFullYear() === today.getFullYear();
+    };
+
+    const isSelected = (day) => {
+        if (multiSelect) {
+            return selectedDates.includes(formatDate(day));
+        }
+        return formatDate(day) === selectedDate;
+    };
+
+    const hasAttendance = (day) => {
+        return attendanceDates.includes(formatDate(day));
+    };
+
+    const isExam = (day) => {
+        return examDates.includes(formatDate(day));
+    };
+
+    const isHoliday = (day) => {
+        return holidayDates.includes(formatDate(day));
+    };
+
+    return (
+        <div className="card">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={prevMonth} className="px-3 py-1 hover:bg-white/5 rounded">
+                    ←
+                </button>
+                <h2 className="text-lg font-semibold">
+                    {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </h2>
+                <button onClick={nextMonth} className="px-3 py-1 hover:bg-white/5 rounded">
+                    →
+                </button>
+            </div>
+
+            {/* Day headers */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center text-xs text-[var(--text-dim)] font-semibold py-2">
+                        {day}
+                    </div>
+                ))}
+            </div>
+
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7 gap-1">
+                {/* Empty cells for days before month starts */}
+                {[...Array(firstDayOfMonth)].map((_, i) => (
+                    <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+
+                {/* Day cells */}
+                {[...Array(daysInMonth)].map((_, i) => {
+                    const day = i + 1;
+                    const dateStr = formatDate(day);
+                    const today = new Date().toISOString().split('T')[0];
+
+                    // v2: Fixed - allows today for both modes
+                    // If allowFuture=true (bunk planning), block past dates (not today)
+                    // Otherwise (normal attendance), block future dates (not today)
+                    const isDisabled = allowFuture ? (dateStr < today) : (dateStr > today);
+
+                    return (
+                        <button
+                            key={day}
+                            onClick={() => !isDisabled && onSelectDate(dateStr)}
+                            disabled={isDisabled}
+                            className={`
+                aspect-square rounded-md flex items-center justify-center text-sm font-medium transition relative
+                ${isSelected(day) ? (multiSelect ? 'bg-orange-500 text-white' : 'bg-blue-500 text-white') : ''}
+                ${isToday(day) && !isSelected(day) ? 'border-2 border-blue-400' : ''}
+                ${isHoliday(day) && !isSelected(day) ? 'bg-green-500/30 text-green-300' : ''}
+                ${hasAttendance(day) && !isSelected(day) && !isHoliday(day) ? 'bg-green-900/20 text-green-400' : ''}
+                ${isDisabled ? 'text-[var(--text-dim)] opacity-30 cursor-not-allowed' : 'hover:bg-white/10 cursor-pointer'}
+                ${!isSelected(day) && !hasAttendance(day) && !isDisabled && !isHoliday(day) ? 'text-white' : ''}
+              `}
+                        >
+                            {day}
+                            {isExam(day) && !isSelected(day) && (
+                                <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex gap-4 mt-4 text-xs text-[var(--text-dim)]">
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 border-2 border-blue-400 rounded"></div>
+                    <span>Today</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <div className={`w-3 h-3 ${multiSelect ? 'bg-orange-500' : 'bg-blue-500'} rounded`}></div>
+                    <span>Selected</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-900/20 rounded"></div>
+                    <span>Has Data</span>
+                </div>
+            </div>
+        </div>
+    );
+}

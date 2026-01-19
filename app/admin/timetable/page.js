@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Navbar from '@/app/components/Navbar';
 import api from '@/utils/api';
 
 export default function TimetableEditor() {
@@ -20,7 +21,7 @@ export default function TimetableEditor() {
     useEffect(() => {
         const storedId = localStorage.getItem('adminClassId');
         if (!storedId) {
-            router.push('/admin/create');
+            router.push('/admin/login');
             return;
         }
         setClassId(storedId);
@@ -35,6 +36,11 @@ export default function TimetableEditor() {
             })
             .catch(err => alert("Failed to load class data"));
     }, [router]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('adminClassId');
+        router.push('/');
+    };
 
     const addNewSubject = async () => {
         if (!newSubjectName.trim()) return;
@@ -91,98 +97,91 @@ export default function TimetableEditor() {
         }
     };
 
-    if (loading) return <div className="p-10 text-center animate-pulse text-blue-600">Loading Timetable...</div>;
+    if (loading) return <div className="flex h-screen items-center justify-center text-white animate-pulse">Loading...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 pb-24 text-gray-800">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold">Edit Weekly Timetable 🗓️</h1>
-                        <p className="text-sm text-gray-500 mt-1">Set your default weekly schedule</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setShowAddSubject(!showAddSubject)}
-                            className="text-xs bg-green-50 text-green-600 px-3 py-2 rounded-lg font-bold hover:bg-green-100"
-                        >
-                            + Add Subject
-                        </button>
-                        <button
-                            onClick={() => router.push('/admin/dashboard')}
-                            className="text-xs bg-gray-100 text-gray-600 px-3 py-2 rounded-lg font-bold hover:bg-gray-200"
-                        >
-                            ← Dashboard
-                        </button>
-                        <button
-                            onClick={() => {
-                                localStorage.removeItem('adminClassId');
-                                router.push('/');
-                            }}
-                            className="text-xs bg-red-50 text-red-600 px-3 py-2 rounded-lg font-bold"
-                        >
-                            Logout
-                        </button>
-                    </div>
+        <>
+            <Navbar isAdmin={true} onLogout={handleLogout} />
+
+            <div className="max-w-4xl mx-auto px-4 py-8">
+
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold mb-1">Edit Weekly Timetable</h1>
+                    <p className="text-[var(--text-dim)]">Set your default weekly schedule</p>
                 </div>
 
-                {/* Add Subject Modal */}
-                {showAddSubject && (
-                    <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-                        <h3 className="font-bold text-green-800 mb-3">Add New Subject</h3>
+                {/* Add Subject Section */}
+                {showAddSubject ? (
+                    <div className="card mb-6 border-green-500/30">
+                        <h2 className="text-sm uppercase text-green-400 mb-3">Add New Subject</h2>
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 placeholder="Subject name (e.g. Chemistry)"
-                                className="flex-1 px-3 py-2 border rounded-lg"
+                                className="input flex-1"
                                 value={newSubjectName}
                                 onChange={(e) => setNewSubjectName(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addNewSubject()}
                             />
                             <button
                                 onClick={addNewSubject}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
+                                className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700"
                             >
                                 Add
                             </button>
                             <button
                                 onClick={() => setShowAddSubject(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-300"
+                                className="px-4 py-2 bg-[var(--border)] rounded-md hover:bg-white/10"
                             >
                                 Cancel
                             </button>
                         </div>
                     </div>
+                ) : (
+                    <div className="mb-6">
+                        <button
+                            onClick={() => setShowAddSubject(true)}
+                            className="btn btn-outline inline-flex w-auto px-6"
+                        >
+                            + Add Subject
+                        </button>
+                    </div>
                 )}
 
-                {/* Current Subjects List */}
-                <div className="mb-6 bg-white rounded-xl p-4 border border-gray-100">
-                    <h3 className="font-bold text-gray-700 mb-2 text-sm">Your Subjects</h3>
+                {/* Current Subjects */}
+                <div className="card mb-6">
+                    <h2 className="text-sm uppercase text-[var(--text-dim)] mb-3">Your Subjects</h2>
                     <div className="flex flex-wrap gap-2">
-                        {subjects.map(sub => (
-                            <span key={sub._id} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                                {sub.name}
-                            </span>
-                        ))}
+                        {subjects.length === 0 ? (
+                            <p className="text-[var(--text-dim)] text-sm">No subjects yet. Add one above.</p>
+                        ) : (
+                            subjects.map(sub => (
+                                <span key={sub._id} className="px-3 py-1 bg-blue-900/20 text-blue-400 rounded-full text-sm border border-blue-500/30">
+                                    {sub.name}
+                                </span>
+                            ))
+                        )}
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                {/* Weekly Timetable */}
+                <div className="space-y-4 mb-6">
                     {DAYS.map(day => {
                         const daySchedule = timetable[day] || [];
 
                         return (
-                            <div key={day} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                <div className="flex justify-between items-center mb-4 border-b pb-2">
-                                    <h2 className="font-bold text-lg text-blue-600">{day}</h2>
-                                    <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                            <div key={day} className="card">
+                                <div className="flex justify-between items-center mb-4 pb-3 border-b border-[var(--border)]">
+                                    <h2 className="text-lg font-semibold">{day}</h2>
+                                    <span className="text-xs px-2 py-1 bg-[var(--card-bg)] border border-[var(--border)] rounded">
                                         {daySchedule.length} {daySchedule.length === 1 ? 'period' : 'periods'}
                                     </span>
                                 </div>
 
                                 <div className="space-y-2 mb-3">
                                     {daySchedule.length === 0 ? (
-                                        <div className="text-center py-4 text-gray-400 text-sm">
+                                        <div className="text-center py-6 text-[var(--text-dim)] text-sm">
                                             No classes scheduled. Click "Add Period" below.
                                         </div>
                                     ) : (
@@ -190,9 +189,9 @@ export default function TimetableEditor() {
                                             .sort((a, b) => a.period - b.period)
                                             .map((slot) => (
                                                 <div key={slot.period} className="flex items-center gap-2">
-                                                    <span className="w-12 font-bold text-gray-500 text-sm">P{slot.period}</span>
+                                                    <span className="w-12 font-bold text-[var(--text-dim)] text-sm">P{slot.period}</span>
                                                     <select
-                                                        className="flex-1 p-2 bg-gray-50 border rounded-lg text-sm"
+                                                        className="input flex-1"
                                                         value={slot.subjectId || ""}
                                                         onChange={(e) => updatePeriod(day, slot.period, e.target.value)}
                                                     >
@@ -203,7 +202,7 @@ export default function TimetableEditor() {
                                                     </select>
                                                     <button
                                                         onClick={() => removePeriod(day, slot.period)}
-                                                        className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100"
+                                                        className="px-3 py-2 bg-red-900/20 text-red-400 rounded-md text-xs hover:bg-red-900/30"
                                                     >
                                                         ✕
                                                     </button>
@@ -214,7 +213,7 @@ export default function TimetableEditor() {
 
                                 <button
                                     onClick={() => addPeriod(day)}
-                                    className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium border border-dashed border-gray-300"
+                                    className="w-full py-2 bg-[var(--card-bg)] border border-dashed border-[var(--border)] rounded-md text-sm hover:border-white/50 transition"
                                 >
                                     + Add Period
                                 </button>
@@ -223,17 +222,15 @@ export default function TimetableEditor() {
                     })}
                 </div>
 
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-                    <div className="max-w-4xl mx-auto">
-                        <button
-                            onClick={saveTimetable}
-                            className="w-full bg-black text-white py-4 rounded-xl font-bold shadow-lg hover:bg-gray-800 transition active:scale-95"
-                        >
-                            Save Timetable
-                        </button>
-                    </div>
-                </div>
+                {/* Save Button */}
+                <button
+                    onClick={saveTimetable}
+                    className="btn btn-primary sticky bottom-4"
+                >
+                    Save Timetable 💾
+                </button>
+
             </div>
-        </div>
+        </>
     );
 }
