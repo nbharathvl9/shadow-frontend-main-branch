@@ -1,16 +1,19 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Edit2, Check, X, Plus, Calendar, Save } from 'lucide-react';
 import Navbar from '@/app/components/Navbar';
 import api from '@/utils/api';
+import { useNotification } from '@/app/components/Notification';
 
 export default function TimetableEditor() {
     const router = useRouter();
+    const notify = useNotification();
     const [loading, setLoading] = useState(true);
     const [classId, setClassId] = useState(null);
     const [subjects, setSubjects] = useState([]);
-    const [showAddSubject, setShowAddSubject] = useState(false);
-    const [newSubjectName, setNewSubjectName] = useState('');
+    const [editingSubject, setEditingSubject] = useState(null);
+    const [editSubjectName, setEditSubjectName] = useState('');
 
     const [timetable, setTimetable] = useState({
         Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: []
@@ -34,26 +37,56 @@ export default function TimetableEditor() {
                 }
                 setLoading(false);
             })
-            .catch(err => alert("Failed to load class data"));
+            .catch(err => notify({ message: "Failed to load class data", type: 'error' }));
     }, [router]);
 
     const handleLogout = () => {
         localStorage.removeItem('adminClassId');
+        localStorage.removeItem('token');
         router.push('/');
     };
 
     const addNewSubject = async () => {
-        if (!newSubjectName.trim()) return;
+        if (!editSubjectName.trim()) return;
 
         try {
-            const res = await api.post(`/class/${classId}/add-subject`, { name: newSubjectName });
+            const res = await api.post(`/class/${classId}/add-subject`, { name: editSubjectName });
             setSubjects([...subjects, res.data.subject]);
-            setNewSubjectName('');
-            setShowAddSubject(false);
-            alert('Subject added! ✅');
+            setEditSubjectName('');
+            setEditingSubject(null);
+            notify({ message: 'Subject added!', type: 'success' });
         } catch (err) {
-            alert('Failed to add subject');
+            notify({ message: 'Failed to add subject', type: 'error' });
         }
+    };
+
+    const updateSubject = async (subjectId) => {
+        if (!editSubjectName.trim()) return;
+
+        try {
+            const res = await api.put(`/class/${classId}/edit-subject/${subjectId}`, { name: editSubjectName });
+            setSubjects(subjects.map(s => s._id === subjectId ? res.data.subject : s));
+            setEditingSubject(null);
+            setEditSubjectName('');
+            notify({ message: 'Subject updated!', type: 'success' });
+        } catch (err) {
+            notify({ message: 'Failed to update subject', type: 'error' });
+        }
+    };
+
+    const startEditSubject = (subject) => {
+        setEditingSubject(subject._id);
+        setEditSubjectName(subject.name);
+    };
+
+    const startAddSubject = () => {
+        setEditingSubject('new');
+        setEditSubjectName('');
+    };
+
+    const cancelEdit = () => {
+        setEditingSubject(null);
+        setEditSubjectName('');
     };
 
     const addPeriod = (day) => {
@@ -90,10 +123,10 @@ export default function TimetableEditor() {
     const saveTimetable = async () => {
         try {
             await api.put('/class/update-timetable', { classId, timetable });
-            alert("Timetable Saved! 🗓️");
+            notify({ message: "Timetable Saved!", type: 'success' });
             router.push('/admin/dashboard');
         } catch (err) {
-            alert("Failed to save.");
+            notify({ message: "Failed to save.", type: 'error' });
         }
     };
 
@@ -106,63 +139,153 @@ export default function TimetableEditor() {
             <div className="max-w-4xl mx-auto px-4 py-8">
 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold mb-1">Edit Weekly Timetable</h1>
-                    <p className="text-[var(--text-dim)]">Set your default weekly schedule</p>
+                <div className="mb-6 flex items-center gap-3">
+                    <Calendar className="w-6 h-6 text-white" />
+                    <div>
+                        <h1 className="text-2xl font-bold mb-1">Edit Weekly Timetable</h1>
+                        <p className="text-[var(--text-dim)]">Set your default weekly schedule</p>
+                    </div>
                 </div>
 
-                {/* Add Subject Section */}
-                {showAddSubject ? (
-                    <div className="card mb-6 border-green-500/30">
-                        <h2 className="text-sm uppercase text-green-400 mb-3">Add New Subject</h2>
-                        <div className="flex gap-2">
+                {/* Subjects Section with Edit Mode */}
+                <div className="card mb-6">
+                    <div className="flex justify-between items-center mb-3">
+                        <h2 className="text-sm uppercase text-white">Your Subjects</h2>
+                        <button
+                            onClick={() => setEditingSubject(editingSubject ? null : 'edit-mode')}
+                            className={`px-4 py-2 rounded-full font-medium transition text-sm flex items-center gap-2 ${editingSubject === 'edit-mode'
+                                    ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                    : 'bg-[var(--card-bg)] border border-[var(--border)] hover:border-white/50'
+                                }`}
+                        >
+                            <Edit2 className="w-4 h-4" />
+                            {editingSubject === 'edit-mode' ? 'Done' : 'Edit'}
+                        </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {subjects.length === 0 ? (
+                            <p className="text-[var(--text-dim)] text-sm">No subjects yet.</p>
+                        ) : (
+                            subjects.map(sub => (
+                                <div key={sub._id} className="flex gap-1 items-center px-3 py-1 bg-blue-900/20 text-blue-400 rounded-full text-sm border border-blue-500/30">
+                                    {editingSubject === 'edit-mode' ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                value={sub.name}
+                                                onChange={(e) => {
+                                                    const newName = e.target.value;
+                                                    setSubjects(subjects.map(s =>
+                                                        s._id === sub._id ? { ...s, name: newName } : s
+                                                    ));
+                                                }}
+                                                className="bg-transparent border-none outline-none text-blue-400 w-24"
+                                                placeholder="Subject name"
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    if (subjects.length === 1) {
+                                                        notify({ message: "You need at least one subject!", type: 'error' });
+                                                        return;
+                                                    }
+                                                    try {
+                                                        await api.delete(`/class/${classId}/delete-subject/${sub._id}`);
+                                                        setSubjects(subjects.filter(s => s._id !== sub._id));
+                                                        notify({ message: 'Subject deleted!', type: 'success' });
+                                                    } catch (err) {
+                                                        notify({ message: 'Failed to delete subject', type: 'error' });
+                                                    }
+                                                }}
+                                                className="text-red-400 hover:text-red-300 transition"
+                                                title="Delete subject"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span>{sub.name}</span>
+                                    )}
+                                </div>
+                            ))
+                        )}
+
+                        {/* Add button appears in edit mode */}
+                        {editingSubject === 'edit-mode' && (
+                            <button
+                                onClick={() => {
+                                    setEditingSubject('new');
+                                    setEditSubjectName('');
+                                }}
+                                className="px-3 py-1 bg-green-600 text-white rounded-full text-sm hover:bg-green-700 transition flex items-center gap-1"
+                            >
+                                <Plus className="w-3 h-3" />
+                                Add
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Inline add form */}
+                    {editingSubject === 'new' && (
+                        <div className="flex gap-2 items-center mt-3 pt-3 border-t border-[var(--border)]">
                             <input
                                 type="text"
-                                placeholder="Subject name (e.g. Chemistry)"
-                                className="input flex-1"
-                                value={newSubjectName}
-                                onChange={(e) => setNewSubjectName(e.target.value)}
+                                value={editSubjectName}
+                                onChange={(e) => setEditSubjectName(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && addNewSubject()}
+                                className="px-3 py-1 bg-black border border-green-500 text-white rounded-full text-sm flex-1"
+                                placeholder="New subject name"
+                                autoFocus
                             />
                             <button
-                                onClick={addNewSubject}
-                                className="px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700"
+                                onClick={async () => {
+                                    if (!editSubjectName.trim()) return;
+                                    try {
+                                        const res = await api.post(`/class/${classId}/add-subject`, { name: editSubjectName });
+                                        setSubjects([...subjects, res.data.subject]);
+                                        setEditSubjectName('');
+                                        setEditingSubject('edit-mode');
+                                        notify({ message: 'Subject added!', type: 'success' });
+                                    } catch (err) {
+                                        notify({ message: 'Failed to add subject', type: 'error' });
+                                    }
+                                }}
+                                className="px-3 py-1 bg-green-600 text-white rounded-full text-xs hover:bg-green-700 transition flex items-center gap-1"
                             >
+                                <Check className="w-3 h-3" />
                                 Add
                             </button>
                             <button
-                                onClick={() => setShowAddSubject(false)}
-                                className="px-4 py-2 bg-[var(--border)] rounded-md hover:bg-white/10"
+                                onClick={() => setEditingSubject('edit-mode')}
+                                className="px-3 py-1 border border-red-500 text-red-500 rounded-full text-xs hover:bg-red-500/10 transition flex items-center gap-1"
                             >
+                                <X className="w-3 h-3" />
                                 Cancel
                             </button>
                         </div>
-                    </div>
-                ) : (
-                    <div className="mb-6">
-                        <button
-                            onClick={() => setShowAddSubject(true)}
-                            className="btn btn-outline inline-flex w-auto px-6"
-                        >
-                            + Add Subject
-                        </button>
-                    </div>
-                )}
+                    )}
 
-                {/* Current Subjects */}
-                <div className="card mb-6">
-                    <h2 className="text-sm uppercase text-[var(--text-dim)] mb-3">Your Subjects</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {subjects.length === 0 ? (
-                            <p className="text-[var(--text-dim)] text-sm">No subjects yet. Add one above.</p>
-                        ) : (
-                            subjects.map(sub => (
-                                <span key={sub._id} className="px-3 py-1 bg-blue-900/20 text-blue-400 rounded-full text-sm border border-blue-500/30">
-                                    {sub.name}
-                                </span>
-                            ))
-                        )}
-                    </div>
+                    {/* Save button for edited subjects */}
+                    {editingSubject === 'edit-mode' && (
+                        <button
+                            onClick={async () => {
+                                try {
+                                    // Update all subjects that were modified
+                                    for (const sub of subjects) {
+                                        await api.put(`/class/${classId}/edit-subject/${sub._id}`, { name: sub.name });
+                                    }
+                                    notify({ message: 'Subjects updated!', type: 'success' });
+                                    setEditingSubject(null);
+                                } catch (err) {
+                                    notify({ message: 'Failed to update subjects', type: 'error' });
+                                }
+                            }}
+                            className="mt-3 w-full py-2 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"
+                        >
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                        </button>
+                    )}
                 </div>
 
                 {/* Weekly Timetable */}
@@ -202,9 +325,9 @@ export default function TimetableEditor() {
                                                     </select>
                                                     <button
                                                         onClick={() => removePeriod(day, slot.period)}
-                                                        className="px-3 py-2 bg-red-900/20 text-red-400 rounded-md text-xs hover:bg-red-900/30"
+                                                        className="px-3 py-2 bg-red-900/20 text-red-400 rounded-full text-xs hover:bg-red-900/30 transition flex items-center"
                                                     >
-                                                        ✕
+                                                        <X className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             ))
@@ -213,9 +336,10 @@ export default function TimetableEditor() {
 
                                 <button
                                     onClick={() => addPeriod(day)}
-                                    className="w-full py-2 bg-[var(--card-bg)] border border-dashed border-[var(--border)] rounded-md text-sm hover:border-white/50 transition"
+                                    className="w-full py-2 bg-[var(--card-bg)] border border-dashed border-[var(--border)] rounded-full text-sm hover:border-white/50 transition flex items-center justify-center gap-2"
                                 >
-                                    + Add Period
+                                    <Plus className="w-4 h-4" />
+                                    Add Period
                                 </button>
                             </div>
                         );
@@ -225,9 +349,10 @@ export default function TimetableEditor() {
                 {/* Save Button */}
                 <button
                     onClick={saveTimetable}
-                    className="btn btn-primary sticky bottom-4"
+                    className="btn btn-primary sticky bottom-4 flex items-center justify-center gap-2"
                 >
-                    Save Timetable 💾
+                    <Save className="w-4 h-4" />
+                    Save Timetable
                 </button>
 
             </div>

@@ -1,11 +1,14 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, X, Rocket } from 'lucide-react';
 import Navbar from '@/app/components/Navbar';
 import api from '@/utils/api';
+import { useNotification } from '@/app/components/Notification';
 
 export default function CreateClass() {
     const router = useRouter();
+    const notify = useNotification();
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -14,10 +17,21 @@ export default function CreateClass() {
         adminPin: ''
     });
 
+    // IMPROVEMENT: Initialize with one empty subject
     const [subjects, setSubjects] = useState([{ name: '', code: '' }]);
 
     const addSubject = () => {
         setSubjects([...subjects, { name: '', code: '' }]);
+    };
+
+    // NEW: Function to remove a subject
+    const removeSubject = (index) => {
+        if (subjects.length === 1) {
+            notify({ message: "You need at least one subject!", type: 'error' });
+            return;
+        }
+        const newSubjects = subjects.filter((_, i) => i !== index);
+        setSubjects(newSubjects);
     };
 
     const handleSubjectChange = (index, field, value) => {
@@ -28,29 +42,36 @@ export default function CreateClass() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // IMPROVEMENT: Validate subjects before sending
+        const invalidSubjects = subjects.some(sub => !sub.name.trim());
+        if (invalidSubjects) {
+            notify({ message: "Please fill in all subject names or remove empty ones.", type: 'error' });
+            return;
+        }
+
         setLoading(true);
 
         try {
             const payload = {
                 ...formData,
                 subjects: subjects,
+                // Default empty timetable structure
                 timetable: { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] }
             };
 
             const res = await api.post('/class/create', payload);
 
-            // 1. Save Token & ID (Auto-Login)
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('adminClassId', res.data.classId);
 
-            alert(`Class Created Successfully! 🚀\n\nYou are now logged in as admin for ${formData.className}.`);
-            
-            // 2. Redirect to Dashboard
+            notify({ message: `Class Created Successfully! You are now logged in as admin for ${formData.className}.`, type: 'success' });
             router.push('/admin/dashboard');
 
         } catch (err) {
-            alert('Error creating class. Check console.');
-            console.error(err);
+            // IMPROVEMENT: Show specific error message from backend (e.g. Duplicate Name)
+            const msg = err.response?.data?.error || 'Error creating class.';
+            notify({ message: msg, type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -69,17 +90,20 @@ export default function CreateClass() {
                 <div className="card">
                     <form onSubmit={handleSubmit} className="space-y-4">
 
+                        {/* Class Name */}
                         <div>
                             <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">Class Name</label>
                             <input
                                 required
                                 className="input"
                                 placeholder="e.g. CSE-3A"
+                                value={formData.className}
                                 onChange={(e) => setFormData({ ...formData, className: e.target.value })}
                             />
                             <p className="text-xs text-[var(--text-dim)] mt-1">You'll use this to login as admin</p>
                         </div>
 
+                        {/* Stats Grid */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">Total Students</label>
@@ -87,6 +111,7 @@ export default function CreateClass() {
                                     required type="number"
                                     className="input"
                                     placeholder="70"
+                                    value={formData.totalStudents}
                                     onChange={(e) => setFormData({ ...formData, totalStudents: e.target.value })}
                                 />
                             </div>
@@ -96,6 +121,7 @@ export default function CreateClass() {
                                     required type="password"
                                     className="input"
                                     placeholder="****"
+                                    value={formData.adminPin}
                                     onChange={(e) => setFormData({ ...formData, adminPin: e.target.value })}
                                 />
                             </div>
@@ -103,28 +129,40 @@ export default function CreateClass() {
 
                         <hr className="border-[var(--border)]" />
 
+                        {/* Subjects Section */}
                         <div>
                             <div className="flex justify-between items-center mb-3">
                                 <label className="block text-sm font-medium text-white">Subjects</label>
                                 <button
                                     type="button"
                                     onClick={addSubject}
-                                    className="text-xs px-3 py-1 bg-white text-black rounded-full font-medium"
+                                    className="text-xs px-3 py-1 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition flex items-center gap-1"
                                 >
-                                    + Add Subject
+                                    <Plus className="w-3 h-3" />
+                                    Add Subject
                                 </button>
                             </div>
 
                             <div className="space-y-2">
                                 {subjects.map((sub, index) => (
-                                    <input
-                                        key={index}
-                                        placeholder="Subject Name (e.g. Math)"
-                                        className="input"
-                                        value={sub.name}
-                                        onChange={(e) => handleSubjectChange(index, 'name', e.target.value)}
-                                        required
-                                    />
+                                    <div key={index} className="flex gap-2">
+                                        <input
+                                            placeholder={`Subject ${index + 1}`}
+                                            className="input flex-1"
+                                            value={sub.name}
+                                            onChange={(e) => handleSubjectChange(index, 'name', e.target.value)}
+                                            required
+                                        />
+                                        {/* Remove Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSubject(index)}
+                                            className="px-3 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-full transition flex items-center"
+                                            title="Remove Subject"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -132,15 +170,15 @@ export default function CreateClass() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn btn-primary"
+                            className="btn btn-primary w-full flex items-center justify-center gap-2"
                         >
+                            <Rocket className="w-4 h-4" />
                             {loading ? 'Creating...' : 'Launch Class'}
                         </button>
 
                     </form>
                 </div>
 
-                {/* --- Return to Home Button --- */}
                 <div className="mt-6 text-center">
                     <button
                         onClick={() => router.push('/')}
