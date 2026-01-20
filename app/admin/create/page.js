@@ -11,7 +11,7 @@ export default function TimetableEditor() {
     const notify = useNotification();
     const [loading, setLoading] = useState(true);
     const [classId, setClassId] = useState(null);
-    
+
     // Data States
     const [subjects, setSubjects] = useState([]);
     const [timetable, setTimetable] = useState({
@@ -60,13 +60,13 @@ export default function TimetableEditor() {
     };
 
     const deleteSubject = async (subjectId) => {
-        if(!confirm("Delete this subject? It will be removed from the timetable too.")) return;
-        
+        if (!confirm("Delete this subject? It will be removed from the timetable too.")) return;
+
         try {
             // Note: Ensure your backend supports this endpoint, otherwise this UI won't work
             await api.delete(`/class/${classId}/delete-subject/${subjectId}`);
             setSubjects(subjects.filter(s => s._id !== subjectId));
-            
+
             // Optional: Clean up timetable
             // This is a UI-only cleanup, backend should handle the logic or you save timetable after
             notify({ message: 'Subject deleted', type: 'success' });
@@ -81,7 +81,7 @@ export default function TimetableEditor() {
         const nextPeriodNum = (timetable[day] || []).length > 0
             ? Math.max(...timetable[day].map(p => p.period)) + 1
             : 1;
-        
+
         setTimetable(prev => ({
             ...prev,
             [day]: [...(prev[day] || []), { period: nextPeriodNum, subjectId: "" }]
@@ -101,7 +101,7 @@ export default function TimetableEditor() {
             const otherPeriods = daySchedule.filter(p => p.period !== periodNum);
             const updatedSchedule = [...otherPeriods, { period: periodNum, subjectId }]
                 .sort((a, b) => a.period - b.period);
-            
+
             return { ...prev, [day]: updatedSchedule };
         });
     };
@@ -123,7 +123,7 @@ export default function TimetableEditor() {
             <Navbar isAdmin={true} />
 
             <div className="max-w-6xl mx-auto px-4 py-8 pb-24">
-                
+
                 {/* --- Header --- */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
@@ -138,56 +138,93 @@ export default function TimetableEditor() {
                 {/* --- Subject Manager (Cleaner UI) --- */}
                 <div className="bg-[#0A0A0A] border border-[var(--border)] rounded-xl p-5 mb-8 shadow-sm">
                     <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-dim)] uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-sm font-medium text-white uppercase tracking-wider">
                             <BookOpen className="w-4 h-4" />
-                            <span>Subjects Library</span>
+                            <span>Your Subjects</span>
                         </div>
-                        
-                        <button 
-                            onClick={() => setIsManageMode(!isManageMode)}
-                            className={`text-xs px-3 py-1.5 rounded-full border transition flex items-center gap-2 ${
-                                isManageMode 
-                                ? 'bg-red-900/20 border-red-500/50 text-red-400' 
-                                : 'border-[var(--border)] text-[var(--text-dim)] hover:text-white'
-                            }`}
+
+                        <button
+                            onClick={async () => {
+                                if (isManageMode) {
+                                    // Save all changes
+                                    try {
+                                        for (const sub of subjects) {
+                                            await api.put(`/class/${classId}/edit-subject/${sub._id}`, { name: sub.name });
+                                        }
+                                        notify({ message: 'Subjects saved!', type: 'success' });
+                                        setIsManageMode(false);
+                                    } catch (err) {
+                                        notify({ message: 'Failed to save subjects', type: 'error' });
+                                    }
+                                } else {
+                                    setIsManageMode(true);
+                                }
+                            }}
+                            className={`px-4 py-2 rounded-full font-medium transition text-sm flex items-center gap-2 ${isManageMode
+                                    ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                    : 'bg-[var(--card-bg)] border border-[var(--border)] hover:border-white/50'
+                                }`}
                         >
-                            <Settings2 className="w-3 h-3" />
-                            {isManageMode ? 'Done Managing' : 'Manage Subjects'}
+                            <Edit2 className="w-4 h-4" />
+                            {isManageMode ? 'Done' : 'Edit'}
                         </button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 items-center">
+                    {/* Subjects displayed vertically (full width) */}
+                    <div className="space-y-2">
                         {subjects.map(sub => (
-                            <div 
-                                key={sub._id} 
-                                className={`group relative px-4 py-2 rounded-full text-sm font-medium transition select-none flex items-center gap-2 ${
-                                    isManageMode 
-                                    ? 'bg-red-950/30 text-red-200 border border-red-900/30 pr-2' 
-                                    : 'bg-[#1a1a1a] text-gray-300 border border-white/5'
-                                }`}
+                            <div
+                                key={sub._id}
+                                className={`flex items-center justify-between px-4 py-3 rounded-full text-sm font-medium transition ${isManageMode
+                                        ? 'bg-blue-900/20 text-blue-400 border border-blue-500/30'
+                                        : 'bg-[#1a1a1a] text-gray-300 border border-white/5'
+                                    }`}
                             >
-                                {sub.name}
+                                {isManageMode ? (
+                                    <input
+                                        type="text"
+                                        value={sub.name}
+                                        onChange={(e) => {
+                                            const newName = e.target.value;
+                                            setSubjects(subjects.map(s =>
+                                                s._id === sub._id ? { ...s, name: newName } : s
+                                            ));
+                                        }}
+                                        className="bg-transparent border-none outline-none text-blue-400 flex-1"
+                                        placeholder="Subject name"
+                                    />
+                                ) : (
+                                    <span>{sub.name}</span>
+                                )}
+
                                 {isManageMode && (
-                                    <button 
+                                    <button
                                         onClick={() => deleteSubject(sub._id)}
                                         className="p-1 hover:bg-red-500/20 rounded-full text-red-400 transition"
                                     >
-                                        <X className="w-3 h-3" />
+                                        <X className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
                         ))}
 
-                        {/* Inline Add Input */}
+                        {/* Add button at bottom */}
                         {!isManageMode && (
-                            <form onSubmit={addNewSubject} className="flex items-center">
-                                <input 
+                            <form onSubmit={addNewSubject} className="flex items-center gap-2">
+                                <input
                                     type="text"
                                     value={newSubjectName}
                                     onChange={(e) => setNewSubjectName(e.target.value)}
-                                    placeholder="+ New Subject"
-                                    className="bg-transparent text-sm text-white placeholder:text-[var(--text-dim)] border-none outline-none w-32 focus:w-48 transition-all px-2 py-1"
+                                    placeholder="New Subject Name"
+                                    className="flex-1 px-4 py-3 bg-black border border-green-500 text-white rounded-full text-sm outline-none focus:border-green-400"
                                 />
+                                <button
+                                    type="submit"
+                                    className="px-6 py-3 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 transition flex items-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add
+                                </button>
                             </form>
                         )}
                     </div>
@@ -197,14 +234,14 @@ export default function TimetableEditor() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {DAYS.map(day => {
                         const daySchedule = timetable[day] || [];
-                        
+
                         return (
                             <div key={day} className="flex flex-col bg-[#0A0A0A] border border-[var(--border)] rounded-xl overflow-hidden h-full">
-                                
+
                                 {/* Day Header */}
                                 <div className="px-5 py-4 border-b border-[var(--border)] bg-white/5 flex justify-between items-center">
                                     <h3 className="font-semibold text-lg text-white">{day}</h3>
-                                    <button 
+                                    <button
                                         onClick={() => addPeriod(day)}
                                         className="text-xs bg-white text-black px-2 py-1 rounded hover:bg-gray-200 transition font-medium flex items-center gap-1"
                                     >
@@ -223,7 +260,7 @@ export default function TimetableEditor() {
                                             .sort((a, b) => a.period - b.period)
                                             .map((slot) => (
                                                 <div key={slot.period} className="flex items-center gap-3 animate-fade-in group">
-                                                    
+
                                                     {/* Period Badge */}
                                                     <div className="w-8 h-8 flex items-center justify-center rounded bg-[#1a1a1a] border border-[var(--border)] text-xs font-bold text-[var(--text-dim)]">
                                                         {slot.period}
@@ -244,7 +281,7 @@ export default function TimetableEditor() {
                                                         {/* Custom Arrow Icon */}
                                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-dim)]">
                                                             <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                             </svg>
                                                         </div>
                                                     </div>
