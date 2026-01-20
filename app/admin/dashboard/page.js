@@ -223,7 +223,7 @@ export default function AdminDashboard() {
                 date: selectedDate,
                 periods: formattedPeriods
             });
-            alert("Attendance Saved Successfully! ✅");
+            alert("Attendance Saved Successfully");
             setIsEditing(false);
             setHasModifications(false);
 
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
             // Reload the attendance for current date to show saved data
             loadAttendanceForDate(selectedDate, classId);
         } catch (err) {
-            alert("Failed to save attendance ❌");
+            alert("Failed to save attendance");
         }
     };
 
@@ -262,12 +262,12 @@ export default function AdminDashboard() {
     // Determine button text
     const getButtonText = () => {
         if (hasModifications || isEditing) {
-            return 'Save Changes 💾';
+            return 'Save Changes';
         }
         if (isViewingPastDate) {
-            return 'Update Attendance 💾';
+            return 'Update Attendance';
         }
-        return 'Save Attendance 💾';
+        return 'Save Attendance';
     };
 
     if (loading) return <div className="flex h-screen items-center justify-center text-white animate-pulse">Loading...</div>;
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
                             : 'bg-[var(--card-bg)] border-[var(--border)] hover:border-white/50'
                             }`}
                     >
-                        ✏️ Edit Mode
+                        Edit Mode
                     </button>
                 </div>
 
@@ -357,7 +357,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <p className="text-xs text-[var(--text-dim)]">
-                            💡 Modify periods, add/remove, or change subjects for this date only
+                             Modify periods, add/remove, or change subjects for this date only
                         </p>
                     </div>
                 )}

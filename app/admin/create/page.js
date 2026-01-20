@@ -37,10 +37,16 @@ export default function CreateClass() {
                 timetable: { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [] }
             };
 
-            await api.post('/class/create', payload);
+            const res = await api.post('/class/create', payload);
 
-            alert(`Class Created Successfully!\n\nClass Name: ${formData.className}\n\nUse this name and your PIN to login as admin.`);
-            router.push('/admin/login');
+            // 1. Save Token & ID (Auto-Login)
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('adminClassId', res.data.classId);
+
+            alert(`Class Created Successfully! 🚀\n\nYou are now logged in as admin for ${formData.className}.`);
+            
+            // 2. Redirect to Dashboard
+            router.push('/admin/dashboard');
 
         } catch (err) {
             alert('Error creating class. Check console.');
@@ -128,10 +134,20 @@ export default function CreateClass() {
                             disabled={loading}
                             className="btn btn-primary"
                         >
-                            {loading ? 'Creating...' : 'Launch Class 🚀'}
+                            {loading ? 'Creating...' : 'Launch Class'}
                         </button>
 
                     </form>
+                </div>
+
+                {/* --- Return to Home Button --- */}
+                <div className="mt-6 text-center">
+                    <button
+                        onClick={() => router.push('/')}
+                        className="text-sm text-[var(--text-dim)] hover:text-white"
+                    >
+                        ← Back to Home
+                    </button>
                 </div>
             </div>
         </>

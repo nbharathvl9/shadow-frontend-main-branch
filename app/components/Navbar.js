@@ -13,14 +13,16 @@ export default function Navbar({ isAdmin = false, isStudent = false, onLogout, c
                     SHADOW
                 </Link>
 
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="flex flex-col gap-1 p-2"
-                >
-                    <span className={`w-5 h-0.5 bg-white transition-transform duration-300 ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-                    <span className={`w-5 h-0.5 bg-white transition-opacity duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
-                    <span className={`w-5 h-0.5 bg-white transition-transform duration-300 ${isOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
-                </button>
+                {(isAdmin || isStudent) && (
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex flex-col gap-1 p-2"
+                    >
+                        <span className={`w-5 h-0.5 bg-white transition-transform duration-300 ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+                        <span className={`w-5 h-0.5 bg-white transition-opacity duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
+                        <span className={`w-5 h-0.5 bg-white transition-transform duration-300 ${isOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+                    </button>
+                )}
             </div>
 
             {isOpen && (
@@ -59,14 +61,7 @@ export default function Navbar({ isAdmin = false, isStudent = false, onLogout, c
                             </button>
                         </>
                     ) : (
-                        <>
-                            <Link href="/" onClick={() => setIsOpen(false)} className="text-sm text-[var(--text-dim)] hover:text-white transition">
-                                Home
-                            </Link>
-                            <Link href="/admin/login" onClick={() => setIsOpen(false)} className="text-sm text-[var(--text-dim)] hover:text-white transition">
-                                Admin Login
-                            </Link>
-                        </>
+                        null
                     )}
                 </div>
             )}

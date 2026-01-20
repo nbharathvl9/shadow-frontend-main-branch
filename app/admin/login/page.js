@@ -16,7 +16,11 @@ export default function AdminLogin() {
 
         try {
             const res = await api.post('/class/admin-login', { className, adminPin });
+            
+            // SAVE THE TOKEN AND CLASS ID
             localStorage.setItem('adminClassId', res.data.classId);
+            localStorage.setItem('token', res.data.token); // <--- NEW LINE
+            
             router.push('/admin/dashboard');
         } catch (err) {
             if (err.response?.status === 401) {
