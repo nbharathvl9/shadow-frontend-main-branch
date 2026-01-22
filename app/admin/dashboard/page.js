@@ -26,6 +26,7 @@ export default function AdminDashboard() {
     const [isViewingPastDate, setIsViewingPastDate] = useState(false);
     const [defaultTimetable, setDefaultTimetable] = useState(null);
     const [lastModified, setLastModified] = useState(null);
+    const [classStrength, setClassStrength] = useState(70); // Default to 70, will be updated from backend
 
     // Check if viewing past date
     const checkIfPastDate = (date) => {
@@ -126,6 +127,7 @@ export default function AdminDashboard() {
                 const subjects = res.data.subjects;
                 setSubjects(subjects);
                 setClassName(res.data.className);
+                setClassStrength(res.data.totalStudents || 70); // Fetch actual class strength
 
                 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                 const currentDay = days[new Date().getDay()];
@@ -464,7 +466,7 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="grid grid-cols-7 gap-2">
-                                    {[...Array(70)].map((_, i) => {
+                                    {[...Array(classStrength)].map((_, i) => {
                                         const roll = i + 1;
                                         const isAbsent = (absentees[index] || []).includes(roll);
 
