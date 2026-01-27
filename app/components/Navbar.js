@@ -2,8 +2,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function Navbar({ isAdmin = false, isStudent = false, onLogout, classId, rollNumber }) {
+export default function Navbar({ isAdmin = false, isStudent = false, onLogout, onReportClick, classId, rollNumber }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [navClassId, setNavClassId] = useState(classId);
+
+    // Load classId from localStorage for admins if not provided via props
+    useState(() => {
+        if (typeof window !== 'undefined' && isAdmin && !classId) {
+            const stored = localStorage.getItem('adminClassId');
+            if (stored) setNavClassId(stored);
+        }
+    }, [isAdmin, classId]);
+
+    // Keep state in sync if prop changes
+    useState(() => {
+        if (classId) setNavClassId(classId);
+    }, [classId]);
 
     return (
         <nav className="border-b border-[var(--border)] p-4 sticky top-0 bg-black/80 backdrop-blur-md z-50">
@@ -41,6 +55,11 @@ export default function Navbar({ isAdmin = false, isStudent = false, onLogout, c
                             <Link href="/admin/special-dates" onClick={() => setIsOpen(false)} className="text-sm text-[var(--text-dim)] hover:text-white transition">
                                 Special Dates
                             </Link>
+                            {navClassId && (
+                                <Link href={`/admin/reports/${navClassId}`} onClick={() => setIsOpen(false)} className="text-sm text-[var(--text-dim)] hover:text-white transition">
+                                    Reports
+                                </Link>
+                            )}
                             <button onClick={() => { onLogout?.(); setIsOpen(false); }} className="text-sm text-[var(--danger-text)] hover:text-red-400 text-left transition">
                                 Logout
                             </button>
@@ -56,6 +75,11 @@ export default function Navbar({ isAdmin = false, isStudent = false, onLogout, c
                             <Link href={`/student/${classId}/${rollNumber}/bunk-effect`} onClick={() => setIsOpen(false)} className="text-sm text-[var(--text-dim)] hover:text-white transition">
                                 Bunk Effect
                             </Link>
+                            {onReportClick && (
+                                <button onClick={() => { onReportClick(); setIsOpen(false); }} className="text-sm text-[var(--text-dim)] hover:text-white text-left transition">
+                                    Report Issue
+                                </button>
+                            )}
                             <button onClick={() => { onLogout?.(); setIsOpen(false); }} className="text-sm text-[var(--danger-text)] hover:text-red-400 text-left transition">
                                 Logout
                             </button>

@@ -382,14 +382,18 @@ export default function AdminDashboard() {
 
     return (
         <>
-            <Navbar isAdmin={true} onLogout={handleLogout} />
+            <Navbar isAdmin={true} onLogout={handleLogout} classId={classId} />
 
             <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
 
                 {/* Header */}
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold mb-1">Mark Attendance</h1>
-                    <p className="text-[var(--text-dim)] text-sm">{className}</p>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-2xl font-bold mb-1">Mark Attendance</h1>
+                            <p className="text-[var(--text-dim)] text-sm">{className}</p>
+                        </div>
+                    </div>
                     {lastModified && (
                         <p className="text-xs text-[var(--text-dim)] mt-1">
                             Last modified: {lastModified.toLocaleString('en-US', {

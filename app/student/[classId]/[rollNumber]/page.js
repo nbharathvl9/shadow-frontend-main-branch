@@ -86,6 +86,14 @@ export default function StudentDashboard() {
 
     setReportSubmitting(true);
     const selectedSubject = data.subjects.find(s => s._id === reportSubjectId);
+    console.log("Submit Payload:", {
+      classId,
+      studentRoll: parseInt(rollNumber),
+      date: reportDate,
+      subjectId: reportSubjectId,
+      subjectName: selectedSubject?.subjectName,
+      issueDescription: reportDescription
+    });
 
     try {
       await api.post('/reports/submit', {
@@ -118,7 +126,13 @@ export default function StudentDashboard() {
 
   return (
     <>
-      <Navbar isStudent={true} onLogout={handleLogout} classId={classId} rollNumber={rollNumber} />
+      <Navbar
+        isStudent={true}
+        onLogout={handleLogout}
+        classId={classId}
+        rollNumber={rollNumber}
+        onReportClick={() => setReportModal(true)}
+      />
 
       <div className="max-w-2xl mx-auto px-4 py-8">
 
@@ -127,13 +141,14 @@ export default function StudentDashboard() {
             <div>
               <h1 className="text-2xl font-bold">Roll No. {data.studentRoll}</h1>
               <p className="text-[var(--text-dim)]">{data.className}</p>
+              {data.lastUpdated && (
+                <p className="text-xs text-[var(--text-dim)] mt-1">
+                  Last Updated: {new Date(data.lastUpdated).toLocaleString('en-US', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </p>
+              )}
             </div>
-            <button
-              onClick={() => setReportModal(true)}
-              className="btn btn-outline px-4 py-2 text-sm"
-            >
-              Report Issue
-            </button>
           </div>
         </div>
 
@@ -229,7 +244,7 @@ export default function StudentDashboard() {
               <div className="p-4 border-t border-[#333] bg-[#0a0a0a]">
                 <button
                   onClick={() => setHistoryModal(false)}
-                  className="w-full py-3 bg-white text-black font-medium rounded-full active:scale-95 transition-transform"
+                  className="w-auto py-2 bg-white text-black font-medium rounded-full active:scale-95 transition-transform text-sm"
                 >
                   Close
                 </button>
@@ -329,10 +344,10 @@ export default function StudentDashboard() {
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-md text-xs font-semibold ${report.status === 'resolved'
-                        ? 'bg-[var(--success)] text-[var(--success-text)]'
-                        : report.status === 'rejected'
-                          ? 'bg-[var(--danger)] text-[var(--danger-text)]'
-                          : 'bg-orange-900/20 text-orange-400'
+                      ? 'bg-[var(--success)] text-[var(--success-text)]'
+                      : report.status === 'rejected'
+                        ? 'bg-[var(--danger)] text-[var(--danger-text)]'
+                        : 'bg-orange-900/20 text-orange-400'
                       }`}>
                       {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                     </span>
