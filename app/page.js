@@ -139,27 +139,22 @@ export default function Home() {
                 <div className="max-w-5xl mx-auto px-4 pt-16 pb-12 relative">
                     <div className="text-center">
                         {/* Badge */}
-                        <div className="animate-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-[var(--text-dim)] mb-8">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Smart Attendance Tracking for Students</span>
-                        </div>
+                      
 
                         {/* Headline */}
                         <h1 className="animate-fade-up delay-100 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]"
                             style={{ letterSpacing: '-0.04em' }}>
                             <span className="bg-gradient-to-b from-white via-white to-gray-500 bg-clip-text text-transparent">
-                                Attendance
+                                Bunk class smartly,
                             </span>
                             <br />
                             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-violet-400 bg-clip-text text-transparent">
-                                made effortless.
+                                instead of blindly.
                             </span>
                         </h1>
 
                         {/* Subhead */}
-                        <p className="animate-fade-up delay-200 text-base sm:text-lg text-[var(--text-dim)] max-w-xl mx-auto mb-10 leading-relaxed">
-                            Track records, plan leaves intelligently, and stay on top of academic requirements — all in one place.
-                        </p>
+ 
 
 
                     </div>
