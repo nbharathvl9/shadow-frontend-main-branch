@@ -334,7 +334,7 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Glassmorphism helpers ─── */
 
 .glass {
-  background: rgba(10, 10, 10, 0.6);
+  background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);

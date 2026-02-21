@@ -454,9 +454,9 @@ export default function StudentDashboard() {
                               <h4 className="font-semibold text-sm">{work.title}</h4>
                               {status && (
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${status.type === 'danger' ? 'bg-red-900/40 text-red-400' :
-                                    status.type === 'urgent' ? 'bg-orange-900/40 text-orange-400' :
-                                      status.type === 'warning' ? 'bg-yellow-900/40 text-yellow-400' :
-                                        'bg-green-900/40 text-green-400'
+                                  status.type === 'urgent' ? 'bg-orange-900/40 text-orange-400' :
+                                    status.type === 'warning' ? 'bg-yellow-900/40 text-yellow-400' :
+                                      'bg-green-900/40 text-green-400'
                                   }`}>
                                   {status.text}
                                 </span>
