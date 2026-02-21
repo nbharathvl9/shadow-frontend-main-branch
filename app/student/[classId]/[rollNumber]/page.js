@@ -16,31 +16,55 @@ export default function StudentDashboard() {
   const [minPercentage, setMinPercentage] = useState(75);
 
   const fetcher = url => api.get(url).then(res => res.data);
+  const reportKey = classId && rollNumber ? `/student/report/${classId}/${rollNumber}` : null;
+  const reportsKey = classId && rollNumber ? `/reports/${classId}/${rollNumber}` : null;
+  const announcementsKey = classId ? `/announcements/${classId}` : null;
+  const reportCacheKey = classId && rollNumber ? `cls_config_${classId}_${rollNumber}` : null;
+  const subjectCacheKey = classId ? `cls_subjects_${classId}` : null;
+
+  const getCachedReport = () => {
+    if (typeof window === 'undefined' || !reportCacheKey) return null;
+    try {
+      return JSON.parse(localStorage.getItem(reportCacheKey) || 'null');
+    } catch {
+      return null;
+    }
+  };
+
+  const swrConfig = {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000
+  };
 
   const { data, error, isLoading: reportLoading } = useSWR(
-    classId && rollNumber ? `/student/report/${classId}/${rollNumber}` : null,
+    reportKey,
     fetcher,
     {
-      revalidateOnFocus: false,
+      ...swrConfig,
       onSuccess: (resData) => {
         if (typeof window !== 'undefined') {
-          localStorage.setItem(`cls_config_${classId}_${rollNumber}`, JSON.stringify(resData));
+          if (reportCacheKey) {
+            localStorage.setItem(reportCacheKey, JSON.stringify(resData));
+          }
+          if (subjectCacheKey && Array.isArray(resData?.subjects)) {
+            localStorage.setItem(subjectCacheKey, JSON.stringify(resData.subjects));
+          }
         }
       },
-      fallbackData: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(`cls_config_${classId}_${rollNumber}`) || "null") : null
+      fallbackData: getCachedReport()
     }
   );
 
   const { data: reportsResponse } = useSWR(
-    classId && rollNumber ? `/reports/${classId}/${rollNumber}` : null,
+    reportsKey,
     fetcher,
-    { revalidateOnFocus: false }
+    swrConfig
   );
 
   const { data: announcementsResponse } = useSWR(
-    classId ? `/announcements/${classId}` : null,
+    announcementsKey,
     fetcher,
-    { revalidateOnFocus: false }
+    swrConfig
   );
 
   const allAnnouncements = announcementsResponse?.announcements || [];
@@ -172,7 +196,7 @@ export default function StudentDashboard() {
       setReportSubjectId('');
       setReportDescription('');
 
-      mutate(`/reports/${classId}/${rollNumber}`);
+      mutate(reportsKey);
     } catch (err) {
       notify({ message: "Failed to submit report", type: 'error' });
     } finally {
