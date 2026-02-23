@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/react';
 import NotificationProvider from './components/Notification';
 import { ConfirmProvider } from './components/ConfirmDialog';
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }) {
             {children}
           </ConfirmProvider>
         </NotificationProvider>
+        <Analytics />
         <Script id="register-sw" strategy="afterInteractive">{`
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(function(err) {

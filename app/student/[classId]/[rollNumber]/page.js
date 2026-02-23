@@ -149,7 +149,7 @@ export default function StudentDashboard() {
 
     if (percentage >= minPercentage + 5) {
       const canBunk = Math.floor((attended / (minPercentage / 100)) - total);
-      return { text: `Safe! You can bunk ${Math.max(0, canBunk)} more`, type: 'safe' };
+      return { text: `Safe! You can skip ${Math.max(0, canBunk)} more`, type: 'safe' };
     } else if (percentage < minPercentage) {
       const mustAttend = Math.ceil(((minPercentage / 100) * total - attended) / (1 - (minPercentage / 100)));
       return { text: `Attend next ${Math.max(1, mustAttend)} to recover`, type: 'danger' };
@@ -506,7 +506,7 @@ export default function StudentDashboard() {
               className="card text-center py-4 hover:border-purple-500/50 transition group"
             >
               <p className="text-2xl mb-2">🧮</p>
-              <p className="text-xs text-[var(--text-dim)] group-hover:text-purple-400 transition">Bunk Effect</p>
+              <p className="text-xs text-[var(--text-dim)] group-hover:text-purple-400 transition">Skip Effect</p>
             </Link>
             <Link
               href={`/student/${classId}/${rollNumber}/attention`}
